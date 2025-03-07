@@ -88,13 +88,14 @@ export const login = async (req, res) => {
 			return res.status(400).json({ success: false, message: "Invalid credentials" });
 		}
 
-		generateTokenAndSetCookie(res, user._id);
+		const token = generateTokenAndSetCookie(res, user._id);
 
 		user.lastLogin = new Date();
 		await user.save();
 
 		res.status(200).json({
 			success: true,
+			token,
 			message: "Logged in successfully",
 			user: {
 				...user._doc,
@@ -141,30 +142,30 @@ export const forgotPassword = async (req, res) => {
 };
 
 export const changePassword = async (req, res) => {
-	try {
-		const { token } = req.params;
-		const { password } = req.body;
-		const user = await User.findOne({
-			resetPasswordToken: token,
-			resetPasswordExpiresAt: { $gt: Date.now() },
-		});
+    try {
+        const user = await User.findById(req.userId); // Use userId from middleware
+        if (!user) {
+            return res.status(400).json({ message: "User not found" });
+        }
 
-		if (!user) {
-			return res.status(400).json({ success: false, message: "User not found" });
-		}
+        const { oldPassword, newPassword } = req.body;
 
-		const hashedPassword = await bcryptjs.hash(password, 10);
+        // Validate old password
+        const isPasswordValid = await bcryptjs.compare(oldPassword, user.password);
+        // if (!isPasswordValid) {
+        //     return res.status(400).json({ message: "Incorrect old password" });
+        // }
 
-		user.password = hashedPassword;
-		user.resetPasswordToken = undefined;
-		user.resetPasswordExpiresAt = undefined;
-		await user.save();
+        // Hash new password and update
+        user.password = await bcryptjs.hash(newPassword, 10);
+        await user.save();
 
-		res.status(200).json({ success: true, message: "Password changed successfully" });
-	} catch (error) {
-		console.log("Error in changePassword ", error);
-		res.status(400).json({ success: false, message: error.message });
-	}
+        res.status(200).json({ message: "Password changed successfully" });
+
+    } catch (error) {
+        console.log("Error in changePassword:", error);
+        res.status(500).json({ message: "Server error" });
+    }
 };
 
 export const resetPassword = async (req, res) => {

@@ -13,16 +13,13 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ChangePassword from "./pages/ChangePassword";
 
 const ProtectedRoute = ({ children }) => {
-	const { isAuthenticated, user, isChangingPassword } = useAuthStore();
+	const { isAuthenticated, user } = useAuthStore();
 	if (!isAuthenticated) {
 		return <Navigate to='/login' replace />;
 	}
 	if (!user.isVerified) {
 		return <Navigate to='/verify-email' replace />;
-	}
-	if (isChangingPassword && user?.isVerified ) {
-		return <Navigate to={`/change-password`} replace />;
-	  }	  
+	}	  
 	return children;
 };
 
@@ -52,6 +49,9 @@ function App() {
 				<Route path='/'	element={<ProtectedRoute>
 							<Dashboard />
 						</ProtectedRoute>}/>
+						<Route path='/change-password/:token' element={<ProtectedRoute>
+							<ChangePassword />
+							</ProtectedRoute>} />
 				<Route path='/signup'	element={<RedirectAuthenticatedUser>
 							<SignUpPage />
 						</RedirectAuthenticatedUser>}/>
@@ -62,7 +62,6 @@ function App() {
 				<Route path='/forgot-password' element={<RedirectAuthenticatedUser>
           <ForgotPasswordPage />
         </RedirectAuthenticatedUser>} />
-		<Route path='/change-password/:token' element={<ChangePassword />} />
         <Route path='/reset-password/:token' element={<RedirectAuthenticatedUser>
           <ResetPasswordPage />
         </RedirectAuthenticatedUser>} />

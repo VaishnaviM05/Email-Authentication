@@ -8,7 +8,6 @@ export const useAuthStore = create((set) => ({
 	isAuthenticated: false,
 	error: null,
 	isLoading: false,
-	isChangingPassword: false,
 	isCheckingAuth: true,
 	message: null,
 
@@ -27,6 +26,7 @@ export const useAuthStore = create((set) => ({
 		set({ isLoading: true, error: null });
 		try {
 			const response = await axios.post(`${API_URL}/login`, { email, password });
+			localStorage.setItem("authToken", response.data.token);
 			set({ isAuthenticated: true, user: response.data.user, error: null, isLoading: false, });
 		} catch (error) {
 			set({ error: error.response?.data?.message || "Error logging in", isLoading: false });
@@ -59,11 +59,19 @@ export const useAuthStore = create((set) => ({
 
 	checkAuth: async () => {
 		set({ isCheckingAuth: true, error: null });
+		const token = localStorage.getItem("authToken");
+		if (!token) {
+			set({ isAuthenticated: false, user: null, isCheckingAuth: false });
+			return;
+		}
 		try {
-			const response = await axios.get(`${API_URL}/check-auth`, { email, password });
+			const response = await axios.get(`${API_URL}/check-auth`, {
+				headers: { Authorization: `Bearer ${token}` }, // Send token in Authorization header
+			});
 			set({ user: response.data.user, isAuthenticated: true, isCheckingAuth: false });
 		} catch (error) {
-			set({ error: null, isCheckingAuth: false, isAuthenticated: false });
+			localStorage.removeItem("authToken"); // Remove invalid token
+			set({ isAuthenticated: false, user: null, isCheckingAuth: false });
 		}
 	},
 
@@ -95,13 +103,22 @@ export const useAuthStore = create((set) => ({
 		}
 	},
 
-	changePassword: async (token, oldPassword, newPassword, confirmPassword) => {
-		set({ isLoading: true, error: null, isChangingPassword: true });
+	changePassword: async (oldPassword, newPassword, confirmPassword) => {
+		set({ isLoading: true, error: null });
+		const token = localStorage.getItem("authToken"); // Get token from storage
+		if (!token) {
+			set({ isLoading: false, error: "Token not found. Please log in again." });
+			return;
+		}
 		try {
-			const response = await axios.post(`${API_URL}/change-password/${token}`, { oldPassword, newPassword, confirmPassword });
+			const response = await axios.post(
+				`${API_URL}/change-password`,
+				{ oldPassword, newPassword, confirmPassword },
+				{ headers: { Authorization: `Bearer ${token}` } } // Send token in headers
+			);
 			set({ message: response.data.message, isLoading: false });
 		} catch (error) {
-			set({ isLoading: false, isChangingPassword: false, error: error.response.data.message || "Error changing password" });
+			set({ isLoading: false, error: error?.response?.data?.message || "Error changing password" });
 			throw error;
 		}
 	},
