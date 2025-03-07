@@ -49,9 +49,7 @@ function App() {
 				<Route path='/'	element={<ProtectedRoute>
 							<Dashboard />
 						</ProtectedRoute>}/>
-						<Route path='/change-password/:token' element={<ProtectedRoute>
-							<ChangePassword />
-							</ProtectedRoute>} />
+						<Route path='/change-password/:token' element={<ChangePassword />} />
 				<Route path='/signup'	element={<RedirectAuthenticatedUser>
 							<SignUpPage />
 						</RedirectAuthenticatedUser>}/>
