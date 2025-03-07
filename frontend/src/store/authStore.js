@@ -117,6 +117,7 @@ export const useAuthStore = create((set) => ({
 				{ headers: { Authorization: `Bearer ${token}` } } // Send token in headers
 			);
 			set({ message: response.data.message, isLoading: false });
+			localStorage.removeItem("authToken")
 		} catch (error) {
 			set({ isLoading: false, error: error?.response?.data?.message || "Error changing password" });
 			throw error;

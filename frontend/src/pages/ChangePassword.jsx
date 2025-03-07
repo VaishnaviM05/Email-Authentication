@@ -14,7 +14,7 @@ const ChangePassword = () => {
     const { token } = useParams();
     const navigate = useNavigate();
 
-    const handleChangePassword =async (e) => {
+    const handleChangePassword = async (e) => {
         e.preventDefault();
         if (newPassword !== confirmPassword) {
 			alert("Passwords do not match");
@@ -24,9 +24,11 @@ const ChangePassword = () => {
 			await changePassword(token, newPassword);
 
 			toast.success("Password changed successfully, redirecting to login page...");
-			setTimeout(() => {
-				navigate("/login");
-			}, 2000);
+            localStorage.removeItem("authToken");
+            useAuthStore.getState().logout();
+            setTimeout(() => {
+                navigate("/login")
+            }, 2000);
 		} catch (error) {
 			console.error(error);
 			toast.error(error.message || "Error changing password");
